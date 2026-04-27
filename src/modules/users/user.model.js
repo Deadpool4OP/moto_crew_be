@@ -1,0 +1,93 @@
+import mongoose, { Document, Model } from 'mongoose';
+import bcrypt from 'bcryptjs';
+import { toJSON } from '../../utils/toJSON.js';
+const userSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    email: {
+        type: String,
+        unique: true,
+        trim: true,
+        lowercase: true,
+        sparse: true, // Allow multiple users with no email
+    },
+    mobile: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true,
+    },
+    password: {
+        type: String,
+        required: true,
+        trim: true,
+        minlength: 8,
+        private: true, // used by toJSON plugin if added
+    },
+    avatar: {
+        type: String,
+        default: '',
+    },
+    vehicleType: {
+        type: String,
+        enum: ['bike', 'car', 'scooter', 'other'],
+        default: 'bike',
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user',
+    },
+    totalDistance: {
+        type: Number,
+        default: 0,
+    },
+    totalPoints: {
+        type: Number,
+        default: 0,
+    },
+}, {
+    timestamps: true,
+});
+// Check if email is taken
+userSchema.statics.isEmailTaken = async function (email, excludeUserId) {
+    const user = await this.findOne({ email, _id: { $ne: excludeUserId } });
+    return !!user;
+};
+// Check if mobile is taken
+userSchema.statics.isMobileTaken = async function (mobile, excludeUserId) {
+    const user = await this.findOne({ mobile, _id: { $ne: excludeUserId } });
+    return !!user;
+};
+// Check if password matches
+userSchema.methods.isPasswordMatch = async function (password) {
+    const user = this;
+    return bcrypt.compare(password, user.password);
+};
+userSchema.pre('save', async function () {
+    const user = this;
+    if (user.isModified('password')) {
+        user.password = await bcrypt.hash(user.password, 8);
+    }
+});
+userSchema.plugin(toJSON);
+export const User = mongoose.model('User', userSchema);
+// Auto-drop stale email index to support sparse unique index
+mongoose.connection.on('open', async () => {
+    try {
+        const indexes = (await User.collection.getIndexes());
+        if (indexes.email_1 && !indexes.email_1.sparse) {
+            console.log('[Database] Dropping stale email index to apply sparse setting...');
+            await User.collection.dropIndex('email_1');
+            console.log('[Database] Stale email index dropped successfully');
+        }
+    }
+    catch (err) {
+        // Index might not exist or already be correct
+        console.log('[Database] Email index check complete');
+    }
+});
+//# sourceMappingURL=user.model.js.map

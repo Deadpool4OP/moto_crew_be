@@ -1,0 +1,1 @@
+{"version":3,"file":"redis.d.ts","sourceRoot":"","sources":["redis.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,KAAK,EAAqB,MAAM,SAAS,CAAC;AAyBnD,eAAO,MAAM,KAAK,OAAiB,CAAC;AAGpC,eAAO,MAAM,SAAS,OAAiB,CAAC;AACxC,eAAO,MAAM,SAAS,OAAiB,CAAC;AAoBxC,eAAO,MAAM,eAAe,qBAO3B,CAAC"}
